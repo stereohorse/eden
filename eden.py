@@ -50,14 +50,19 @@ def get_index():
 
 
 def get_text(args):
+    ret_container = []
     try:
-        curses.wrapper(init_ui)
+        curses.wrapper(get_with_ui, ret_container)
     except KeyboardInterrupt:
         pass
 
+    if len(ret_container):
+        print(ret_container[0])
 
-def init_ui(stdscr):
+
+def get_with_ui(stdscr, ret_container):
     curses.curs_set(0)
+    curses.nonl()
 
     inp_win = curses.newwin(1, curses.COLS - 1,
                             curses.LINES - 1, 0)
@@ -66,18 +71,47 @@ def init_ui(stdscr):
                                 curses.COLS - 1,
                                 0, 0)
 
+    def dsr(rets, sel_i):
+        draw_search_rets(results_win, rets, sel_i)
+
     search_str = ''
+    search_rets = []
+    selected_i = None
 
     ix = get_index()
     with ix.searcher() as searcher:
         while True:
             k = stdscr.getch()
 
-            if k == curses.KEY_ENTER or k == 10 or k == 13:
+            if k == ca.CR:
+                if selected_i is not None:
+                    ret_container.append(search_rets[selected_i]['text'])
                 return
 
-            if k == curses.KEY_BACKSPACE or k == ca.DEL:
+            if k == ca.LF:
+                if search_rets and selected_i is not None:
+                    if selected_i < (len(search_rets) - 1):
+                        selected_i += 1
+                    else:
+                        selected_i = 0
+
+                    dsr(search_rets, selected_i)
+                continue
+
+            if k == ca.VT:
+                if search_rets and selected_i is not None:
+                    if selected_i > 0:
+                        selected_i -= 1
+                    else:
+                        selected_i = len(search_rets) - 1
+
+                    dsr(search_rets, selected_i)
+                continue
+
+            if k == ca.DEL:
                 search_str = search_str[:-1]
+            elif not 32 <= k <= 126:
+                continue
             else:
                 search_str += chr(k)
 
@@ -88,13 +122,33 @@ def init_ui(stdscr):
             qp = wq.QueryParser('text', ix.schema)
             query = qp.parse(search_str)
 
-            results = searcher.search(query)
+            search_rets = []
+            for ret in searcher.search(query):
+                search_ret = {
+                    'pos': ret.pos,
+                    'text': ret.fields()['text']
+                }
 
-            results_win.erase()
-            for ret in results:
-                text = ret.fields()['text']
-                results_win.addstr(ret.pos, 0, text)
-            results_win.refresh()
+                search_rets.append(search_ret)
+
+            if search_rets:
+                selected_i = 0
+            else:
+                selected_i = None
+
+            dsr(search_rets, selected_i)
+
+
+def draw_search_rets(window, search_rets, selected_i):
+    window.erase()
+
+    for ret in search_rets:
+        if selected_i == ret['pos']:
+            window.addstr(ret['pos'], 0, ret['text'], curses.A_REVERSE)
+        else:
+            window.addstr(ret['pos'], 0, ret['text'])
+
+    window.refresh()
 
 
 if __name__ == '__main__':
