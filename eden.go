@@ -1,16 +1,23 @@
 package main
 
 import (
-	"fmt"
+	cmd "github.com/stereohorse/eden/commands"
+	st "github.com/stereohorse/eden/storage"
 	"os"
 )
 
 func main() {
-	fmt.Println(os.Args[1:])
-}
+	command := cmd.CommandFrom(os.Args)
+	if command == nil {
+		os.Exit(1)
+	}
 
-func getSubcommand(args []string) {
-	if len(args) < 2 {
-		return
+	storage, err := st.GetStorage()
+	if err != nil {
+		os.Exit(1)
+	}
+
+	if err := command.ExecuteOn(storage); err != nil {
+		os.Exit(1)
 	}
 }
