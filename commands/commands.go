@@ -25,6 +25,10 @@ func CommandFrom(cmdParts []string) (cmd *command) {
 		cmd = &command{
 			handle: putIntoStorage,
 		}
+	case "get":
+		cmd = &command{
+			handle: getFromStorage,
+		}
 	default:
 		return
 	}

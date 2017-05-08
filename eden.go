@@ -1,23 +1,22 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	cmd "github.com/stereohorse/eden/commands"
 	st "github.com/stereohorse/eden/storage"
-	"os"
 )
 
 func main() {
-	command := cmd.CommandFrom(os.Args)
+	command := cmd.CommandFrom(os.Args[1:])
 	if command == nil {
-		os.Exit(1)
+		log.Fatal("bad command")
 	}
 
-	storage, err := st.GetStorage()
-	if err != nil {
-		os.Exit(1)
-	}
+	storage := st.GetStorage()
 
 	if err := command.ExecuteOn(storage); err != nil {
-		os.Exit(1)
+		log.Fatal("unable to execute command")
 	}
 }
