@@ -5,6 +5,6 @@ import (
 	"strings"
 )
 
-func putIntoStorage(args []string, storage *st.Storage) error {
+func putIntoStorage(args []string, storage st.Storage) error {
 	return storage.Remember(strings.Join(args, " "))
 }

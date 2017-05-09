@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 
@@ -9,14 +10,34 @@ import (
 )
 
 func main() {
-	command := cmd.CommandFrom(os.Args[1:])
-	if command == nil {
-		log.Fatal("bad command")
+	if err := run(os.Args[1:], createFsStorage()); err != nil {
+		log.Fatal(err)
 	}
+}
 
-	storage := st.GetStorage()
+func run(args []string, storage st.Storage) error {
+	command := cmd.CommandFrom(args)
+	if command == nil {
+		return errors.New("bad command")
+	}
 
 	if err := command.ExecuteOn(storage); err != nil {
-		log.Fatal("unable to execute command")
+		return err
 	}
+
+	return nil
+}
+
+func createFsStorage() st.Storage {
+	workDirPath, err := st.GetDefaultWorkDirPath()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	storage, err := st.NewFsStorage(workDirPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return storage
 }
