@@ -37,8 +37,8 @@ func (self *FsStorage) Remember(text string) (err error) {
 		return u.NewError("unable to remember doc", err)
 	}
 
-	docBytes := bytes.NewBuffer(nil)
-	enc := gob.NewEncoder(docBytes)
+	var docBytes bytes.Buffer
+	enc := gob.NewEncoder(&docBytes)
 	err = enc.Encode(Document{
 		Body: text,
 	})
@@ -123,7 +123,7 @@ func NewFsStorage(dirPath string) (*FsStorage, error) {
 		doc := &Document{}
 
 		dec := gob.NewDecoder(bytes.NewBuffer(docBytes))
-		err = dec.Decode(&Document{})
+		err = dec.Decode(doc)
 		if err != nil {
 			return nil, u.NewError("unable to decode docs", err)
 		}

@@ -100,10 +100,6 @@ func TestRecall(t *testing.T) {
 		t.Fatalf("should load all docs, actually: %d", len(fss.docs))
 	}
 
-	for _, d := range fss.docs {
-		t.Log(d)
-	}
-
 	hits, err = fss.Recall("hi")
 	if err != nil {
 		t.Fatal(err)
