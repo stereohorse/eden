@@ -17,6 +17,6 @@ type Document struct {
 	Body string
 }
 
-func (self *Document) String() string {
-	return fmt.Sprintf("Document(body=%s)", self.Body)
+func (d *Document) String() string {
+	return fmt.Sprintf("Document(body=%s)", d.Body)
 }

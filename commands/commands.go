@@ -9,8 +9,8 @@ type Command struct {
 	args   []string
 }
 
-func (self Command) ExecuteOn(storage st.Storage) error {
-	return self.handle(self.args, storage)
+func (c Command) ExecuteOn(storage st.Storage) error {
+	return c.handle(c.args, storage)
 }
 
 func CommandFrom(cmdParts []string) (cmd *Command) {
