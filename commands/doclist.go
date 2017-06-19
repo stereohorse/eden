@@ -17,7 +17,7 @@ type DocsList struct {
 
 func (d *DocsList) SetDocs(docs []st.Document) {
 	d.docs = docs
-	d.cursorBottom()
+	d.cursorIntoBounds()
 
 	d.PostEventWidgetContent(d)
 }
@@ -48,6 +48,10 @@ func (d *DocsList) Resize() {
 }
 
 func (d *DocsList) GetSelection() *st.Document {
+	if d.cursorIndex == -1 {
+		return nil
+	}
+
 	return &d.docs[d.cursorIndex]
 }
 
@@ -74,7 +78,7 @@ func (d *DocsList) Size() (int, int) {
 }
 
 func (d *DocsList) cursorUp() {
-	if d.cursorIndex == 0 {
+	if d.cursorIndex <= 0 {
 		return
 	}
 
@@ -82,16 +86,22 @@ func (d *DocsList) cursorUp() {
 }
 
 func (d *DocsList) cursorDown() {
-	if d.cursorIndex == len(d.docs)-1 {
+	if d.cursorIndex == (len(d.docs) - 1) {
 		return
 	}
 
 	d.cursorIndex++
 }
 
-func (d *DocsList) cursorBottom() {
-	if d.cursorIndex >= len(d.docs) {
-		d.cursorIndex = len(d.docs) - 1
+func (d *DocsList) cursorIntoBounds() {
+	if len(d.docs) == 0 {
+		d.cursorIndex = -1
+	} else {
+		if d.cursorIndex >= (len(d.docs) - 1) {
+			d.cursorIndex = len(d.docs) - 1
+		} else if d.cursorIndex < 0 {
+			d.cursorIndex = 0
+		}
 	}
 }
 
