@@ -17,10 +17,7 @@ type DocsList struct {
 
 func (d *DocsList) SetDocs(docs []st.Document) {
 	d.docs = docs
-
-	if d.cursorIndex >= len(docs) {
-		d.cursorIndex = len(docs) - 1
-	}
+	d.cursorBottom()
 
 	d.PostEventWidgetContent(d)
 }
@@ -30,22 +27,72 @@ func (d *DocsList) SetView(view views.View) {
 }
 
 func (d *DocsList) Draw() {
-	var styl tcell.Style
 	var comb []rune
+	stdStyle := tcell.StyleDefault
 
-	d.view.SetContent(1, 2, 'i', comb, styl)
+	for i, doc := range d.docs {
+		if i == d.cursorIndex {
+			d.view.SetContent(0, i, '>', comb, stdStyle)
+		} else {
+			d.view.SetContent(0, i, ' ', comb, stdStyle)
+		}
+
+		for k, r := range doc.Body {
+			d.view.SetContent(k+2, i, r, comb, stdStyle)
+		}
+	}
 }
 
 func (d *DocsList) Resize() {
 	d.PostEventWidgetResize(d)
 }
 
-func (d *DocsList) HandleEvent(tcell.Event) bool {
-	return false
+func (d *DocsList) GetSelection() *st.Document {
+	return &d.docs[d.cursorIndex]
+}
+
+func (d *DocsList) HandleEvent(ev tcell.Event) bool {
+	t, ok := ev.(*tcell.EventKey)
+	if !ok {
+		return false
+	}
+
+	switch t.Key() {
+	case tcell.KeyCtrlK:
+		d.cursorUp()
+	case tcell.KeyCtrlJ:
+		d.cursorDown()
+	default:
+		return false
+	}
+
+	return true
 }
 
 func (d *DocsList) Size() (int, int) {
 	return 10, 1
+}
+
+func (d *DocsList) cursorUp() {
+	if d.cursorIndex == 0 {
+		return
+	}
+
+	d.cursorIndex--
+}
+
+func (d *DocsList) cursorDown() {
+	if d.cursorIndex == len(d.docs)-1 {
+		return
+	}
+
+	d.cursorIndex++
+}
+
+func (d *DocsList) cursorBottom() {
+	if d.cursorIndex >= len(d.docs) {
+		d.cursorIndex = len(d.docs) - 1
+	}
 }
 
 func NewDocsList() *DocsList {

@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"bytes"
+	"log"
+
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/views"
 )
@@ -8,22 +11,61 @@ import (
 type SearchBox struct {
 	views.WidgetWatchers
 
-	view views.View
+	view          views.View
+	searchString  bytes.Buffer
+	eventHandlers []SearchBoxEventHandler
+}
+
+type SearchBoxEventHandler func(searchString string) error
+
+func (sb *SearchBox) AddEventHandler(eh SearchBoxEventHandler) {
+	sb.eventHandlers = append(sb.eventHandlers, eh)
 }
 
 func (sb *SearchBox) Draw() {
 	var styl tcell.Style
 	var comb []rune
 
-	sb.view.SetContent(0, 0, 's', comb, styl)
+	for i, r := range sb.searchString.String() {
+		sb.view.SetContent(i, 0, r, comb, styl)
+	}
+}
+
+func (sb *SearchBox) GetSearchString() string {
+	return sb.searchString.String()
 }
 
 func (sb *SearchBox) Resize() {
 	sb.PostEventWidgetResize(sb)
 }
 
-func (*SearchBox) HandleEvent(ev tcell.Event) bool {
-	return false
+func (sb *SearchBox) HandleEvent(ev tcell.Event) bool {
+	t, ok := ev.(*tcell.EventKey)
+	if !ok {
+		return false
+	}
+
+	switch t.Key() {
+	case tcell.KeyBackspace, tcell.KeyBackspace2:
+		len := sb.searchString.Len()
+		if len != 0 {
+			sb.searchString.Truncate(len - 1)
+		}
+	case tcell.KeyRune:
+		sb.searchString.WriteRune(t.Rune())
+	default:
+		return false
+	}
+
+	if len(sb.eventHandlers) != 0 {
+		for _, eh := range sb.eventHandlers {
+			if err := eh(sb.searchString.String()); err != nil {
+				log.Print(err)
+			}
+		}
+	}
+
+	return true
 }
 
 func (sb *SearchBox) SetView(view views.View) {
@@ -31,7 +73,7 @@ func (sb *SearchBox) SetView(view views.View) {
 }
 
 func (sb *SearchBox) Size() (int, int) {
-	return 10, 1
+	return sb.searchString.Len(), 1
 }
 
 func NewSearchBox() *SearchBox {
