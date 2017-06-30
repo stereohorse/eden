@@ -27,6 +27,18 @@ func (self *InMemoryStorage) Recall(needle string) (hits []Hit, err error) {
 	return
 }
 
+func (st *InMemoryStorage) Delete(doc *Document) error {
+	return nil
+}
+
+func (st *InMemoryStorage) Close() error {
+	return nil
+}
+
+func (st *InMemoryStorage) Init() error {
+	return nil
+}
+
 func NewInMemoryStorage() (*InMemoryStorage, error) {
 	return &InMemoryStorage{}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/views"
 	st "github.com/stereohorse/eden/storage"
+	"log"
 )
 
 type DocsList struct {
@@ -13,7 +14,11 @@ type DocsList struct {
 
 	docs        []st.Document
 	cursorIndex int
+
+	onDelete OnDelete
 }
+
+type OnDelete func(doc *st.Document) error
 
 func (d *DocsList) SetDocs(docs []st.Document) {
 	d.docs = docs
@@ -66,6 +71,16 @@ func (d *DocsList) HandleEvent(ev tcell.Event) bool {
 		d.cursorUp()
 	case tcell.KeyCtrlJ:
 		d.cursorDown()
+	case tcell.KeyCtrlD:
+		selection := d.GetSelection()
+		if d.onDelete != nil && selection != nil {
+			if err := d.onDelete(selection); err != nil {
+				log.Println("unable to delete file: {}", err)
+			} else {
+				d.docs = append(d.docs[:d.cursorIndex], d.docs[d.cursorIndex+1:]...)
+				d.cursorIntoBounds()
+			}
+		}
 	default:
 		return false
 	}
@@ -103,6 +118,10 @@ func (d *DocsList) cursorIntoBounds() {
 			d.cursorIndex = 0
 		}
 	}
+}
+
+func (d *DocsList) SetOnDelete(onDelete OnDelete) {
+	d.onDelete = onDelete
 }
 
 func NewDocsList() *DocsList {

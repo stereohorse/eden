@@ -28,8 +28,8 @@ func (ui *ConsoleUI) Run() error {
 func NewConsoleUI(storage st.Storage) *ConsoleUI {
 	box := views.NewBoxLayout(views.Vertical)
 
-	titles := NewDocsList()
-	box.AddWidget(titles, 1)
+	docsList := NewDocsList()
+	box.AddWidget(docsList, 1)
 
 	preview := views.NewTextArea()
 	box.AddWidget(preview, 2)
@@ -41,10 +41,12 @@ func NewConsoleUI(storage st.Storage) *ConsoleUI {
 		BoxLayout: *box,
 		app:       &views.Application{},
 		storage:   storage,
-		docsList:  titles,
+		docsList:  docsList,
 		preview:   preview,
 		searchBox: searchBox,
 	}
+
+	docsList.SetOnDelete(ui.onDelete)
 
 	searchBox.AddEventHandler(ui.handleSearchBox)
 	ui.handleSearchBox("")
@@ -52,6 +54,10 @@ func NewConsoleUI(storage st.Storage) *ConsoleUI {
 	ui.app.SetRootWidget(ui)
 
 	return ui
+}
+
+func (ui *ConsoleUI) onDelete(doc *st.Document) error {
+	return ui.storage.Delete(doc)
 }
 
 func (ui *ConsoleUI) HandleEvent(ev tcell.Event) bool {

@@ -7,6 +7,9 @@ import (
 type Storage interface {
 	Remember(string) error
 	Recall(needle string) ([]Hit, error)
+	Delete(*Document) error
+	Close() error
+	Init() error
 }
 
 type Hit struct {

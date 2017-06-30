@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"os/user"
 	"path"
 
 	cmd "github.com/stereohorse/eden/commands"
@@ -12,7 +13,19 @@ import (
 )
 
 func main() {
-	if err := run(os.Args[1:], createFsStorage()); err != nil {
+	storage := createStorage()
+
+	defer func() {
+		if err := storage.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	if err := storage.Init(); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := run(os.Args[1:], storage); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -42,12 +55,13 @@ func run(args []string, storage st.Storage) error {
 }
 
 func setupLogging() (*os.File, error) {
-	wp, err := st.GetDefaultWorkDirPath()
+	wp, err := getWorkDir()
 	if err != nil {
 		return nil, ut.NewError("unable to get work dir", err)
 	}
 
-	f, err := os.OpenFile(path.Join(wp, "logs"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(path.Join(wp, "logs"),
+		os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, ut.NewError("unable to open log file", err)
 	}
@@ -57,16 +71,31 @@ func setupLogging() (*os.File, error) {
 	return f, nil
 }
 
-func createFsStorage() st.Storage {
-	workDirPath, err := st.GetDefaultWorkDirPath()
+func createStorage() st.Storage {
+	workDirPath, err := getWorkDir()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	storage, err := st.NewFsStorage(workDirPath)
+	storage, err := st.NewBoltStorage(workDirPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return storage
+}
+
+func getWorkDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	workDirPath := path.Join(usr.HomeDir, ".eden")
+
+	if err := os.MkdirAll(workDirPath, 0700); err != nil {
+		return "", err
+	}
+
+	return workDirPath, nil
 }
